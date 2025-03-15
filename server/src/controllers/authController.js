@@ -23,13 +23,14 @@ const login = async (req, res) => {
         u.username,
         u.password,
         u.full_name,
+        u.avatar,
         json_agg(DISTINCT r.name) as roles,
         json_object_agg(DISTINCT r.name, r.permissions) as permissions
       FROM users u
       JOIN user_roles ur ON u.id = ur.user_id
       JOIN roles r ON ur.role_id = r.id
       WHERE u.username = $1 AND u.is_active = true
-      GROUP BY u.id, u.username, u.password, u.full_name
+      GROUP BY u.id, u.username, u.password, u.full_name, u.avatar
     `;
 
     const { rows } = await pool.query(userQuery, [username]);
@@ -56,6 +57,7 @@ const login = async (req, res) => {
         id: user.id,
         username: user.username,
         fullName: user.full_name,
+        avatar: user.avatar,
         roles: user.roles,
         permissions: user.permissions
       },
@@ -70,6 +72,7 @@ const login = async (req, res) => {
         id: user.id,
         username: user.username,
         fullName: user.full_name,
+        avatar: user.avatar,
         roles: user.roles,
         permissions: user.permissions
       }

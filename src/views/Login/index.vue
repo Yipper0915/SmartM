@@ -78,8 +78,12 @@ const onSubmit = () => {
         
         // 保存用户信息
         userStore.setUserInfo({
+          id: res.user.id,
+          username: res.user.username,
           full_name: res.user.fullName,
-          // 其他用户信息字段
+          avatar: res.user.avatar,
+          roles: res.user.roles,
+          permissions: res.user.permissions
         })
         
         // 获取动态路由

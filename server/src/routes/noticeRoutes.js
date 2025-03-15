@@ -28,11 +28,14 @@ const upload = multer({ storage: storage });
 // 获取公告列表
 router.get('/', authMiddleware, async (req, res) => {
   try {
+    console.log('开始获取公告列表...');
     const { rows } = await pool.query(
-      `SELECT id, title, content, attachments, created_at 
+      `SELECT id, title, content, created_at 
        FROM notices 
-       ORDER BY created_at DESC`
+       ORDER BY created_at DESC 
+       LIMIT 5`
     );
+    console.log('获取到的公告列表:', rows);
     res.json({ data: rows });
   } catch (error) {
     console.error('获取公告列表失败:', error);

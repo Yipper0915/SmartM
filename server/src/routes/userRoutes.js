@@ -383,4 +383,17 @@ router.get('/current', authMiddleware, async (req, res) => {
   }
 });
 
+// 获取在职员工数量
+router.get('/count', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT COUNT(*) as count FROM users WHERE is_active = true'
+    );
+    res.json({ data: rows[0].count });
+  } catch (error) {
+    console.error('获取在职员工数量失败:', error);
+    res.status(500).json({ message: '服务器错误' });
+  }
+});
+
 module.exports = router; 
