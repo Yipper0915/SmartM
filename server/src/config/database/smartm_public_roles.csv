@@ -1,0 +1,4 @@
+1,system_admin,系统管理员,"{""all"": true}",2025-03-15 06:06:49.757284 +00:00,2025-03-15 06:06:49.757284 +00:00
+2,project_manager,项目经理,"{""report_view"": true, ""project_management"": true}",2025-03-15 06:06:49.757284 +00:00,2025-03-15 06:06:49.757284 +00:00
+3,production_specialist,生产专员,"{""inventory_view"": true, ""production_management"": true}",2025-03-15 06:06:49.757284 +00:00,2025-03-15 06:06:49.757284 +00:00
+4,inventory_manager,库存管理员,"{""inventory_view"": true, ""inventory_management"": true}",2025-03-15 06:06:49.757284 +00:00,2025-03-15 06:06:49.757284 +00:00

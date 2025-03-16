@@ -25,6 +25,7 @@ const login = async (req, res) => {
         u.full_name,
         u.avatar,
         json_agg(DISTINCT r.name) as roles,
+        json_agg(DISTINCT r.id) as role_ids,
         json_object_agg(DISTINCT r.name, r.permissions) as permissions
       FROM users u
       JOIN user_roles ur ON u.id = ur.user_id
@@ -59,6 +60,7 @@ const login = async (req, res) => {
         fullName: user.full_name,
         avatar: user.avatar,
         roles: user.roles,
+        roleIds: user.role_ids,
         permissions: user.permissions
       },
       process.env.JWT_SECRET,
@@ -74,6 +76,7 @@ const login = async (req, res) => {
         fullName: user.full_name,
         avatar: user.avatar,
         roles: user.roles,
+        roleIds: user.role_ids,
         permissions: user.permissions
       }
     });

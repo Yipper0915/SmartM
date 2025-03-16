@@ -9,7 +9,9 @@ import Layout from '@/layout/index.vue'
 const componentMap = {
   user: () => import('@/views/System/UserManage.vue'),
   notice: () => import('@/views/System/NoticeManage.vue'),
-  profileIndex: () => import('@/views/Profile/index.vue')
+  profileIndex: () => import('@/views/Profile/index.vue'),
+  projectList: () => import('@/views/Project/List.vue'),
+  projectSchedule: () => import('@/views/Project/Schedule.vue')
 }
 
 const iconList = {

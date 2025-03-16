@@ -396,4 +396,36 @@ router.get('/count', authMiddleware, async (req, res) => {
   }
 });
 
+// 获取库存管理员列表
+router.get('/inventory-managers', authMiddleware, async (req, res) => {
+  const { search } = req.query;
+  try {
+    let query = `
+      SELECT 
+        u.id,
+        u.full_name,
+        u.username,
+        u.email,
+        u.department
+      FROM users u
+      JOIN user_roles ur ON u.id = ur.user_id
+      WHERE ur.role_id = 4 AND u.is_active = true
+    `;
+
+    const params = [];
+    if (search) {
+      query += ` AND (u.full_name ILIKE $1 OR u.username ILIKE $1)`;
+      params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY u.full_name`;
+
+    const { rows } = await pool.query(query, params);
+    res.json({ data: rows });
+  } catch (error) {
+    console.error('获取库存管理员列表失败:', error);
+    res.status(500).json({ message: '服务器错误' });
+  }
+});
+
 module.exports = router; 

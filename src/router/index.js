@@ -3,6 +3,7 @@ import Layout from '../layout/index.vue'
 import { getAuthRouters } from "@/router/authRouter";
 import {getDynamicRoutes} from '@/utils/getData.js'
 import { useAuthRouterStore } from '@/stores/authRouter.js'
+import { useUserStore } from '@/stores/user'
 
 
 
@@ -63,6 +64,38 @@ const router = createRouter({
       ]
     },
     {
+      path: '/project',
+      name: 'project',
+      component: Layout,
+      meta: {
+        breadcrumbName: '项目管理',
+        icon: 'Folder',
+        staticRouter: true
+      },
+      children: [
+        {
+          path: 'list',
+          name: 'projectList',
+          component: () => import('@/views/Project/List.vue'),
+          meta: {
+            breadcrumbName: '项目列表',
+            icon: 'List',
+            staticRouter: true
+          }
+        },
+        {
+          path: 'schedule',
+          name: 'projectSchedule',
+          component: () => import('@/views/Project/Schedule.vue'),
+          meta: {
+            breadcrumbName: '项目排期',
+            icon: 'Calendar',
+            staticRouter: true
+          }
+        }
+      ]
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: Layout,
@@ -97,9 +130,17 @@ router.beforeEach(async(to, from, next) => {
   const token = sessionStorage.token
   if(to.path !== '/login' && !token) {
     next('/login')
-  }else {
+  } else {
     const authRouterStore = useAuthRouterStore()
+    const userStore = useUserStore()
     let {routerList} = authRouterStore
+
+    // 如果用户信息不存在，从sessionStorage获取
+    if (!userStore.userInfo.id && sessionStorage.getItem('userInfo')) {
+      const userInfo = JSON.parse(sessionStorage.getItem('userInfo'))
+      userStore.setUserInfo(userInfo)
+    }
+
     if(!routerList.length) {
       let dynamicRoutes = await getDynamicRoutes()
       // 动态添加路由
@@ -109,11 +150,9 @@ router.beforeEach(async(to, from, next) => {
         router.addRoute(val)
       })
       next({ path: to.path })
-
-    }else {
+    } else {
       next()
     }
-    
   }
 })
 export default router

@@ -1,0 +1,6 @@
+1,admin,黄管理,"[""system_admin""]","{ ""system_admin"" : {""all"": true} }"
+2,manager,李PM,"[""project_manager""]","{ ""project_manager"" : {""report_view"": true, ""project_management"": true} }"
+3,production,刘生产,"[""production_specialist""]","{ ""production_specialist"" : {""inventory_view"": true, ""production_management"": true} }"
+4,inventory,陆库管,"[""inventory_manager""]","{ ""inventory_manager"" : {""inventory_view"": true, ""inventory_management"": true} }"
+5,productionDu,杜生产,"[""production_specialist""]","{ ""production_specialist"" : {""inventory_view"": true, ""production_management"": true} }"
+6,Liang,梁库管,"[""inventory_manager""]","{ ""inventory_manager"" : {""inventory_view"": true, ""inventory_management"": true} }"

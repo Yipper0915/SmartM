@@ -3,6 +3,9 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const path = require('path');
+const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 
@@ -15,8 +18,11 @@ console.log('Static files directory:', uploadsPath); // 添加日志
 app.use('/uploads', express.static(uploadsPath));
 
 // 路由
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notices', noticeRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // ... 其他现有的代码 ...
 

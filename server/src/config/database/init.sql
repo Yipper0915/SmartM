@@ -84,4 +84,128 @@ SELECT
 FROM users u
 JOIN user_roles ur ON u.id = ur.user_id
 JOIN roles r ON ur.role_id = r.id
-GROUP BY u.id, u.username, u.full_name; 
+GROUP BY u.id, u.username, u.full_name;
+
+-- 任务类型表
+CREATE TABLE IF NOT EXISTS task_type (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(100) NOT NULL,
+    color VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 任务优先级表
+CREATE TABLE IF NOT EXISTS task_priority (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 任务表
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    type_id INTEGER NOT NULL REFERENCES task_type(id),
+    priority_id INTEGER NOT NULL REFERENCES task_priority(id),
+    assignee_id INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认任务类型
+INSERT INTO task_type (name, description, color) VALUES
+('normal', '普通任务', '#67C23A'),
+('material', '物料需求', '#E6A23C')
+ON CONFLICT (name) DO NOTHING;
+
+-- 插入默认任务优先级
+INSERT INTO task_priority (name, description) VALUES
+('low', '低优先级'),
+('medium', '中优先级'),
+('high', '高优先级')
+ON CONFLICT (name) DO NOTHING;
+
+-- 创建项目表
+CREATE TABLE IF NOT EXISTS projects (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    duration_days INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status_id INTEGER NOT NULL,
+    manager_id INTEGER NOT NULL REFERENCES users(id),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 创建项目状态表
+CREATE TABLE IF NOT EXISTS project_status (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 插入默认项目状态
+INSERT INTO project_status (name, description) VALUES
+('pending', '待启动'),
+('in_progress', '进行中'),
+('completed', '已完成'),
+('abnormal', '异常')
+ON CONFLICT (name) DO NOTHING;
+
+-- 为项目表添加更新时间触发器
+CREATE TRIGGER update_projects_updated_at
+    BEFORE UPDATE ON projects
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- 插入测试项目数据
+INSERT INTO projects (
+    name,
+    duration_days,
+    start_date,
+    end_date,
+    status_id,
+    manager_id,
+    description
+) 
+SELECT 
+    '测试项目 1',
+    30,
+    CURRENT_DATE,
+    CURRENT_DATE + INTERVAL '30 days',
+    (SELECT id FROM project_status WHERE name = 'in_progress'),
+    (SELECT id FROM users WHERE username = 'manager'),
+    '这是一个测试项目'
+WHERE NOT EXISTS (
+    SELECT 1 FROM projects WHERE name = '测试项目 1'
+);
+
+INSERT INTO projects (
+    name,
+    duration_days,
+    start_date,
+    end_date,
+    status_id,
+    manager_id,
+    description
+)
+SELECT 
+    '测试项目 2',
+    60,
+    CURRENT_DATE + INTERVAL '15 days',
+    CURRENT_DATE + INTERVAL '75 days',
+    (SELECT id FROM project_status WHERE name = 'pending'),
+    (SELECT id FROM users WHERE username = 'manager'),
+    '这是另一个测试项目'
+WHERE NOT EXISTS (
+    SELECT 1 FROM projects WHERE name = '测试项目 2'
+); 

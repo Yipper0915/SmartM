@@ -9,12 +9,6 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item @click="openPersonal"
-          ><span class="fz-12">个人中心</span></el-dropdown-item
-        >
-        <el-dropdown-item @click="passWordDialogVisible = true"
-          ><span class="fz-12">修改密码</span></el-dropdown-item
-        >
         <el-dropdown-item @click="loginOut"
           ><span class="fz-12">退出</span></el-dropdown-item
         >

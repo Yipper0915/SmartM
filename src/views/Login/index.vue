@@ -83,8 +83,20 @@ const onSubmit = () => {
           full_name: res.user.fullName,
           avatar: res.user.avatar,
           roles: res.user.roles,
+          roleIds: res.user.roleIds,
           permissions: res.user.permissions
         })
+        
+        // 同时保存到sessionStorage以供路由使用
+        sessionStorage.setItem('userInfo', JSON.stringify({
+          id: res.user.id,
+          username: res.user.username,
+          full_name: res.user.fullName,
+          avatar: res.user.avatar,
+          roles: res.user.roles,
+          roleIds: res.user.roleIds,
+          permissions: res.user.permissions
+        }))
         
         // 获取动态路由
         let dynamicRoutes = await getDynamicRoutes()

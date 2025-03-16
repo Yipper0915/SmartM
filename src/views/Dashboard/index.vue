@@ -53,7 +53,10 @@
             </template>
             <div class="notice-list">
               <template v-if="notices.length">
-                <div v-for="notice in notices" :key="notice.id" class="notice-item">
+                <div v-for="notice in notices" 
+                     :key="notice.id" 
+                     class="notice-item"
+                     @click="handleNoticeClick(notice.id)">
                   <div class="notice-title">
                     <el-icon><InfoFilled /></el-icon>
                     <span>{{ notice.title }}</span>
@@ -61,6 +64,10 @@
                   <div class="notice-content">{{ notice.content }}</div>
                   <div class="notice-footer">
                     <span class="notice-time">{{ new Date(notice.created_at).toLocaleString() }}</span>
+                    <el-button link @click="handleDetail(row)" type="primary" size="small">
+                      查看详情
+                      <el-icon class="el-icon--right"><arrow-right /></el-icon>
+                    </el-button>
                   </div>
                 </div>
               </template>
@@ -91,10 +98,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Location, Sunny, Document, Histogram, User, Check, InfoFilled } from '@element-plus/icons-vue'
+import { Location, Sunny, Document, Histogram, User, Check, InfoFilled, ArrowRight } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'  // 导入 user store
 import defaultAvatar from '@/assets/default-avatar.png'  // 导入默认头像
+import { useRouter } from 'vue-router'
 
 // 创建新的 axios 实例，避免影响全局配置
 const api = axios.create({
@@ -171,6 +179,8 @@ const avatarUrl = computed(() => {
   return `http://localhost:3001${userInfo.value.avatar}`
 })
 
+const router = useRouter()
+
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
@@ -212,6 +222,12 @@ const fetchUserInfo = async () => {
     }
   }
 }
+const handleDetail = (row) => {
+  currentNotice.value = row;
+  showDetail.value = true; // 切换到详情页
+  isEditing.value = false; // 默认进入非编辑模式
+  editForm.value = { ...row };
+};
 
 // 获取公告列表
 const fetchNotices = async () => {
@@ -248,6 +264,11 @@ const fetchEmployeeCount = async () => {
       console.error('错误状态码:', error.response.status)
     }
   }
+}
+
+// 处理公告点击
+const handleNoticeClick = (noticeId) => {
+  router.push(`/notice/${noticeId}`)
 }
 
 // 在组件挂载时获取数据
@@ -375,16 +396,34 @@ onMounted(() => {
 
 .notice-list {
   padding: 0 16px;
-  overflow-y: auto;
-  height: calc(100% - 24px);
+  overflow-y: auto; /* 开启垂直滚动 */
+  height: 300px; /* 固定高度 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #e4e7ed;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: #f5f7fa;
+  }
 }
 
 .notice-item {
   padding: 16px 0;
   border-bottom: 1px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.3s ease;
 
   &:last-child {
     border-bottom: none;
+  }
+
+  &:hover {
+    background-color: #f5f7fa;
+    padding: 16px 10px;
+    margin: 0 -10px;
   }
 }
 

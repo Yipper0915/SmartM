@@ -74,4 +74,15 @@ export function updateAvatar(data) {
     method: 'post',
     data
   })
+}
+
+// 获取指定角色的用户列表
+export function getUsersByRole(params) {
+  return request({
+    url: '/users/inventory-managers',
+    method: 'get',
+    params: {
+      search: params?.search
+    }
+  })
 } 
