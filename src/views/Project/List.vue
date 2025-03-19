@@ -133,13 +133,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="inventory_managers" label="关联库存管理员" min-width="180">
+        <el-table-column prop="inventory_manager_name" label="关联库存管理员" min-width="180">
           <template #default="scope">
-            <div class="managers-list">
-              <span v-for="(manager, index) in scope.row.inventory_managers" :key="manager">
-                {{ manager }}
-                <span v-if="index < scope.row.inventory_managers.length - 1">, </span>
-              </span>
+            <div class="manager-info">
+              <el-tag size="small" effect="plain" v-if="scope.row.inventory_manager_name">
+                {{ scope.row.inventory_manager_name }}
+              </el-tag>
+              <span v-else class="no-data">暂无关联管理员</span>
             </div>
           </template>
         </el-table-column>
@@ -214,10 +214,9 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="库存管理员" prop="inventory_managers">
+        <el-form-item label="库存管理员" prop="inventory_manager_id">
           <el-select
-            v-model="form.inventory_managers"
-            multiple
+            v-model="form.inventory_manager_id"
             filterable
             :loading="loading"
             placeholder="请选择库存管理员"
@@ -304,7 +303,7 @@ const form = reactive({
   duration_days: 30,
   date_range: [],
   status_id: 1,
-  inventory_managers: [],
+  inventory_manager_id: undefined,
   description: ''
 })
 
@@ -313,7 +312,7 @@ const rules = {
   duration_days: [{ required: true, message: '请输入完成时间', trigger: 'blur' }],
   date_range: [{ required: true, message: '请选择起止时间', trigger: 'change' }],
   status_id: [{ required: true, message: '请选择项目状态', trigger: 'change' }],
-  inventory_managers: [{ required: true, message: '请选择库存管理员', trigger: 'change' }]
+  inventory_manager_id: [{ required: true, message: '请选择库存管理员', trigger: 'change' }]
 }
 
 // 计算属性：过滤后的项目列表
@@ -385,7 +384,7 @@ const handleAdd = () => {
   form.duration_days = 30
   form.date_range = []
   form.status_id = 1
-  form.inventory_managers = []
+  form.inventory_manager_id = undefined
   form.description = ''
   dialogVisible.value = true
 }
@@ -398,17 +397,11 @@ const handleEdit = async (row) => {
   form.duration_days = row.duration_days
   form.date_range = [row.start_date, row.end_date]
   form.status_id = getStatusId(row.status_name)
-  form.description = row.description
+  form.description = row.description || ''
+  form.inventory_manager_id = row.inventory_manager_id
 
   // 确保在打开对话框前已经加载了库存管理员列表
   await fetchInventoryManagers()
-  
-  // 从后端获取的数据可能是名字数组，需要找到对应的id
-  const managerIds = inventoryManagerOptions.value
-    .filter(manager => row.inventory_managers.includes(manager.full_name))
-    .map(manager => manager.id)
-  
-  form.inventory_managers = managerIds
   dialogVisible.value = true
 }
 
@@ -444,7 +437,7 @@ const submitForm = async () => {
         start_date: form.date_range[0],
         end_date: form.date_range[1],
         status_id: form.status_id,
-        inventory_manager_ids: form.inventory_managers,
+        inventory_manager_id: form.inventory_manager_id,
         description: form.description
       }
 
@@ -681,12 +674,14 @@ onMounted(() => {
   color: #606266;
 }
 
-.managers-list {
+.manager-info {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  color: #606266;
+}
+
+.no-data {
+  color: #909399;
+  font-size: 12px;
 }
 
 :deep(.el-table) {

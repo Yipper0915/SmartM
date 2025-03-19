@@ -38,7 +38,7 @@ export const getDynamicRoutes = () => {
             });
         }
 
-        // 项目经理可以看到项目管理路由
+        // 项目经理可以看到完整的项目管理路由
         if (roleIds.includes(2)) {
             routes.push({
                 path: '/project',
@@ -56,6 +56,27 @@ export const getDynamicRoutes = () => {
                             icon: 'List'
                         }
                     },
+                    {
+                        path: 'schedule',
+                        name: 'projectSchedule',
+                        meta: {
+                            breadcrumbName: '项目排期',
+                            icon: 'List'
+                        }
+                    }
+                ]
+            });
+        }
+        // 普通用户只能看到项目排期
+        else {
+            routes.push({
+                path: '/project',
+                name: 'project',
+                meta: {
+                    breadcrumbName: '项目管理',
+                    icon: 'Folder'
+                },
+                children: [
                     {
                         path: 'schedule',
                         name: 'projectSchedule',

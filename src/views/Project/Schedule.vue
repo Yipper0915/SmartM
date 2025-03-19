@@ -6,18 +6,30 @@
         <div class="list-header">
           <h3>项目列表</h3>
         </div>
+        <div v-if="projectList.length === 0" class="empty-project-list">
+          <el-empty description="暂无相关项目" />
+        </div>
         <el-menu
+          v-else
           :default-active="activeProjectId?.toString() || ''"
           class="project-menu"
           @select="handleProjectSelect"
         >
           <el-menu-item
-            v-for="project in projectList"
+            v-for="project in sortedProjects"
             :key="project.id"
             :index="project.id.toString()"
+            style="padding-left:5px"
           >
-            
-            <span>{{ project.project_name }}</span>
+            <el-tag
+              size="small"
+              :type="getStatusTagType(project.status_name)"
+              class="status-tag"
+              style="padding: 0 4px; height: 16px; line-height: 16px"
+            >
+              {{ getStatusShortText(project.status_name) }}
+            </el-tag>
+            <span style="font-size:13px;">{{ project.project_name }}</span>
           </el-menu-item>
         </el-menu>
       </div>
@@ -28,7 +40,7 @@
           <div class="header-left">
             <h3>{{ activeProject?.project_name }} - 任务进度</h3>
           </div>
-          <div class="header-right">
+          <div class="header-right" v-if="userRole !== 3">
             <el-button type="default" @click="handleAddStep" class="mr-2">
               <el-icon class="mr-5"><component :is="icons.Plus" /></el-icon>新增步骤
             </el-button>
@@ -46,7 +58,8 @@
               <div v-for="task in getTasksByStep(1)" 
                    :key="task.id" 
                    class="task-card"
-                   :style="{ backgroundColor: task.task_color }">
+                   :style="{ backgroundColor: task.task_color }"
+                   @dblclick="handleTaskDblClick(task)">
                 <div class="task-header">
                   <div class="task-title">{{ task.task_name }}</div>
                   <div class="status-wrapper">
@@ -69,7 +82,8 @@
               <div v-for="task in getTasksByStep(2)" 
                    :key="task.id" 
                    class="task-card"
-                   :style="{ backgroundColor: task.task_color }">
+                   :style="{ backgroundColor: task.task_color }"
+                   @dblclick="handleTaskDblClick(task)">
                 <div class="task-header">
                   <div class="task-title">{{ task.task_name }}</div>
                   <div class="status-wrapper">
@@ -92,7 +106,8 @@
               <div v-for="task in getTasksByStep(3)" 
                    :key="task.id" 
                    class="task-card"
-                   :style="{ backgroundColor: task.task_color }">
+                   :style="{ backgroundColor: task.task_color }"
+                   @dblclick="handleTaskDblClick(task)">
                 <div class="task-header">
                   <div class="task-title">{{ task.task_name }}</div>
                   <div class="status-wrapper">
@@ -115,7 +130,8 @@
               <div v-for="task in getTasksByStep(4)" 
                    :key="task.id" 
                    class="task-card"
-                   :style="{ backgroundColor: task.task_color }">
+                   :style="{ backgroundColor: task.task_color }"
+                   @dblclick="handleTaskDblClick(task)">
                 <div class="task-header">
                   <div class="task-title">{{ task.task_name }}</div>
                   <div class="status-wrapper">
@@ -150,7 +166,7 @@
         label-width="100px"
       >
         <el-form-item label="任务名称" prop="name">
-          <el-input v-model="taskForm.name" placeholder="请输入任务名称" />
+          <el-input v-model="taskForm.name" placeholder="请输入任务名称" :disabled="userRole !== 2" />
         </el-form-item>
         <el-form-item label="开始日期" prop="start_date">
           <el-date-picker
@@ -159,6 +175,7 @@
             placeholder="选择开始日期"
             value-format="YYYY-MM-DD"
             style="width: 100%"
+            :disabled="userRole !== 2"
           />
         </el-form-item>
         <el-form-item label="结束日期" prop="end_date">
@@ -168,10 +185,11 @@
             placeholder="选择结束日期"
             value-format="YYYY-MM-DD"
             style="width: 100%"
+            :disabled="userRole !== 2"
           />
         </el-form-item>
         <el-form-item label="任务类型" prop="type_id">
-          <el-select v-model="taskForm.type_id" placeholder="请选择任务类型" style="width: 100%">
+          <el-select v-model="taskForm.type_id" placeholder="请选择任务类型" style="width: 100%" :disabled="userRole !== 2">
             <el-option
               v-for="type in taskTypes"
               :key="type.id"
@@ -186,7 +204,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属步骤" prop="step_id">
-          <el-select v-model="taskForm.step_id" placeholder="请选择所属步骤" style="width: 100%">
+          <el-select v-model="taskForm.step_id" placeholder="请选择所属步骤" style="width: 100%" :disabled="userRole !== 2">
             <el-option
               v-for="step in availableSteps"
               :key="step"
@@ -196,7 +214,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="重要程度" prop="priority_id">
-          <el-select v-model="taskForm.priority_id" placeholder="请选择重要程度" style="width: 100%">
+          <el-select v-model="taskForm.priority_id" placeholder="请选择重要程度" style="width: 100%" :disabled="userRole !== 2">
             <el-option
               v-for="priority in taskPriorities"
               :key="priority.id"
@@ -211,6 +229,7 @@
             filterable
             placeholder="请选择负责人"
             style="width: 100%"
+            :disabled="userRole !== 2"
           >
             <el-option
               v-for="user in userList"
@@ -220,12 +239,29 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="任务状态" prop="status">
+          <el-select v-model="taskForm.status" placeholder="请选择任务状态" style="width: 100%">
+            <el-option label="未开始" :value="1" />
+            <el-option label="进行中" :value="2" />
+            <el-option label="已完成" :value="3" />
+            <el-option label="异常" :value="4" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="任务描述" prop="description">
           <el-input
             v-model="taskForm.description"
             type="textarea"
             rows="3"
             placeholder="请输入任务描述"
+            :disabled="userRole !== 2"
+          />
+        </el-form-item>
+        <el-form-item label="备注" prop="note">
+          <el-input
+            v-model="taskForm.note"
+            type="textarea"
+            rows="3"
+            placeholder="请输入备注信息"
           />
         </el-form-item>
       </el-form>
@@ -235,6 +271,65 @@
           <el-button type="primary" @click="submitTaskForm" :loading="submitting">
             确定
           </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 任务详情对话框 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="任务详情"
+      width="500px"
+      border-radius="8px"
+      destroy-on-close
+    >
+    
+      <div class="task-detail">
+        <div class="detail-item">
+          <label>任务名称：</label>
+          <span>{{ selectedTask?.task_name }}</span>
+        </div>
+        <div class="detail-item">
+          <label>开始日期：</label>
+          <span>{{ selectedTask?.start_date }}</span>
+        </div>
+        <div class="detail-item">
+          <label>结束日期：</label>
+          <span>{{ selectedTask?.end_date }}</span>
+        </div>
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>任务类型</label>
+            <span class="detail-value">{{ getTypeText(selectedTask?.type_name) }}</span>
+          </div>
+          <div class="detail-item">
+            <label>所属步骤</label>
+            <span class="detail-value">步骤 {{ selectedTask?.step_id }}</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-item">
+            <label>重要程度</label>
+            <span class="detail-value">{{ getPriorityText(selectedTask?.priority_name) }}</span>
+          </div>
+          <div class="detail-item">
+            <label>负责人</label>
+            <span class="detail-value">{{ selectedTask?.assignee_name }}</span>
+          </div>
+        </div>
+        <div class="detail-item description">
+          <label>任务描述：</label>
+          <p>{{ selectedTask?.description }}</p>
+        </div>
+        <div class="detail-item description">
+          <label>备注：</label>
+          <p>{{ selectedTask?.note || '暂无备注' }}</p>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="detailDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="handleEdit">编辑</el-button>
         </span>
       </template>
     </el-dialog>
@@ -260,6 +355,7 @@ import {
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import VGanttChart from 'v-gantt-chart'
 import dayjs from 'dayjs'
+import { useUserStore } from '@/stores/user'
 
 // 标记图标为非响应式
 const icons = markRaw({
@@ -280,6 +376,8 @@ const dialogType = ref('add')
 const submitting = ref(false)
 const currentTaskId = ref(null)
 const projectSteps = ref(0)
+const detailDialogVisible = ref(false)
+const selectedTask = ref(null)
 
 // 表单相关
 const taskFormRef = ref(null)
@@ -291,7 +389,9 @@ const taskForm = reactive({
   priority_id: undefined,
   assignee_id: undefined,
   step_id: undefined,
-  description: ''
+  description: '',
+  status: undefined,
+  note: ''
 })
 
 const taskRules = {
@@ -333,6 +433,49 @@ const availableSteps = computed(() => {
   }
   return steps
 })
+
+const sortedProjects = computed(() => {
+  return [...projectList.value].sort((a, b) => {
+    const statusOrder = {
+      'abnormal': 1,
+      'in_progress': 2,
+      'not_started': 3,
+      'completed': 4
+    }
+    return statusOrder[a.status_name] - statusOrder[b.status_name]
+  })
+})
+
+const getStatusTagType = (status) => {
+  const types = {
+    'abnormal': 'danger',
+    'in_progress': 'warning',
+    'not_started': 'info',
+    'completed': 'success'
+  }
+  return types[status] || 'info'
+}
+
+const getStatusShortText = (status) => {
+  const texts = {
+    'abnormal': '异常',
+    'in_progress': '进行',
+    'not_started': '未开',
+    'completed': '完成'
+  }
+  return texts[status] || '未知'
+}
+
+// 获取用户角色
+const userStore = useUserStore()
+const userRole = computed(() => userStore.userInfo?.role_id || null)
+
+// 修改空项目列表的样式
+const emptyProjectList = {
+  padding: '20px',
+  textAlign: 'center',
+  color: '#909399'
+}
 
 // 方法定义
 const fetchData = async () => {
@@ -426,16 +569,25 @@ const handleTaskDblClick = async (task) => {
   const taskDetail = taskList.value.find(t => t.id === task.id)
   if (!taskDetail) return
 
+  selectedTask.value = taskDetail
+  detailDialogVisible.value = true
+}
+
+const handleEdit = () => {
   dialogType.value = 'edit'
-  currentTaskId.value = task.id
-  taskForm.name = taskDetail.task_name
-  taskForm.start_date = taskDetail.start_date
-  taskForm.end_date = taskDetail.end_date
-  taskForm.type_id = taskTypes.value.find(t => t.name === taskDetail.type_name)?.id
-  taskForm.priority_id = taskPriorities.value.find(p => p.name === taskDetail.priority_name)?.id
-  taskForm.assignee_id = taskDetail.assignee_id
-  taskForm.step_id = taskDetail.step_id
-  taskForm.description = taskDetail.description
+  currentTaskId.value = selectedTask.value.id
+  taskForm.name = selectedTask.value.task_name
+  taskForm.start_date = selectedTask.value.start_date
+  taskForm.end_date = selectedTask.value.end_date
+  taskForm.type_id = taskTypes.value.find(t => t.name === selectedTask.value.type_name)?.id
+  taskForm.priority_id = taskPriorities.value.find(p => p.name === selectedTask.value.priority_name)?.id
+  taskForm.assignee_id = selectedTask.value.assignee_id
+  taskForm.step_id = selectedTask.value.step_id
+  taskForm.description = selectedTask.value.description
+  taskForm.status = selectedTask.value.status
+  taskForm.note = selectedTask.value.note
+
+  detailDialogVisible.value = false
   dialogVisible.value = true
 }
 
@@ -532,6 +684,32 @@ const getStatusText = (status) => {
   }
 }
 
+const getPriorityText = (priority) => {
+  switch (priority) {
+    case 'low':
+      return '低优先级'
+    case 'normal':
+      return '普通优先级'
+    case 'high':
+      return '高优先级'
+    case 'urgent':
+      return '紧急'
+    default:
+      return priority
+  }
+}
+
+const getTypeText = (type) => {
+  switch (type) {
+    case 'normal':
+      return '普通任务'
+    case 'urgent':
+      return '紧急任务'
+    default:
+      return type
+  }
+}
+
 // 初始化
 onMounted(() => {
   fetchData()
@@ -577,6 +755,33 @@ onMounted(() => {
   .project-menu {
     flex: 1;
     overflow-y: auto;
+    max-height: calc(100vh - 170px);
+
+    :deep(.el-menu-item) {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 32px;
+      line-height: 32px;
+      font-size: 11px;
+      padding: 0 10px 0 5px !important;
+
+      .status-tag {
+        min-width: 28px;
+        text-align: center;
+        transform: scale(0.8);
+        margin-left: -4px;
+        font-size: 10px;
+      }
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+
+      &.is-active {
+        font-weight: normal;
+      }
+    }
   }
 }
 
@@ -701,16 +906,6 @@ onMounted(() => {
   }
 }
 
-:deep(.el-menu-item) {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 40px;
-  line-height: 40px;
-  font-size: 12px;
-  padding: 0 12px !important;
-}
-
 .step-display-area {
   display: flex;
   flex: 1;
@@ -819,5 +1014,47 @@ onMounted(() => {
 .task-assignee {
   font-size: 12px;
   font-weight: 500;
+}
+
+.task-detail {
+  padding: 10px;
+}
+
+.detail-item {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.detail-item label {
+  width: 100px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.detail-item.description {
+  flex-direction: column;
+}
+
+.detail-item.description label {
+  margin-bottom: 8px;
+}
+
+.detail-item.description p {
+  margin: 0;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  width: 100%;
+  min-height: 60px;
+  white-space: pre-wrap;
+}
+
+.empty-project-list {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
 }
 </style> 

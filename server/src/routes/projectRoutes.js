@@ -67,151 +67,121 @@ router.get('/stats', authMiddleware, async (req, res) => {
 // 获取项目列表
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT 
-        p.id,
-        p.name as project_name,
-        p.duration_days,
-        p.start_date,
-        p.end_date,
-        p.description,
-        ps.name as status_name,
-        ps.description as status_description,
-        u.full_name as manager_name
-      FROM projects p
-      LEFT JOIN project_status ps ON p.status_id = ps.id
-      LEFT JOIN users u ON p.manager_id = u.id
-      WHERE p.manager_id = $1
-      ORDER BY p.created_at DESC`,
-      [req.user.id]
-    );
-    res.json({ data: rows });
+    let query;
+    const params = [];
+
+    console.log('当前用户ID:', req.user.id);
+
+    // 先获取用户角色
+    const roleQuery = `
+      SELECT role_id 
+      FROM user_roles 
+      WHERE user_id = $1
+    `;
+    const roleResult = await pool.query(roleQuery, [req.user.id]);
+    const userRoleId = roleResult.rows[0]?.role_id;
+    
+    console.log('查询到的用户角色:', userRoleId);
+
+    if (userRoleId === 2) {
+      // 项目经理查看自己负责的项目
+      query = `
+        SELECT 
+          p.id,
+          p.name as project_name,
+          p.duration_days,
+          p.start_date,
+          p.end_date,
+          p.description,
+          ps.name as status_name,
+          ps.description as status_description,
+          p.created_at
+        FROM projects p
+        LEFT JOIN project_status ps ON p.status_id = ps.id
+        WHERE p.manager_id = $1
+        ORDER BY p.created_at DESC
+      `;
+      params.push(req.user.id);
+    } else {
+      // 其他成员查看与自己相关的任务所属的项目
+      query = `
+        SELECT DISTINCT
+          p.id,
+          p.name as project_name,
+          p.duration_days,
+          p.start_date,
+          p.end_date,
+          p.description,
+          ps.name as status_name,
+          ps.description as status_description,
+          p.created_at
+        FROM projects p
+        LEFT JOIN project_status ps ON p.status_id = ps.id
+        WHERE EXISTS (
+          SELECT 1 
+          FROM tasks t 
+          WHERE t.project_id = p.id 
+          AND t.assignee_id = $1
+        )
+        ORDER BY p.created_at DESC
+      `;
+      params.push(req.user.id);
+    }
+
+    console.log('执行的SQL查询:', query);
+    console.log('查询参数:', params);
+
+    const { rows } = await pool.query(query, params);
+    console.log('查询结果行数:', rows.length);
+    console.log('查询结果:', rows);
+
+    return res.json({ data: rows || [] });
   } catch (error) {
     console.error('获取项目列表失败:', error);
-    res.status(500).json({ message: '服务器错误' });
+    return res.json({ data: [] });
   }
 });
 
 // 创建项目
 router.post('/', authMiddleware, async (req, res) => {
-  const { 
-    name, 
-    duration_days, 
-    start_date, 
-    end_date, 
-    status_id, 
-    inventory_manager_ids,
-    description 
-  } = req.body;
-
-  // 验证必需字段
-  if (!name || !duration_days || !start_date || !end_date || !status_id) {
-    return res.status(400).json({ 
-      message: '缺少必需字段',
-      details: '项目名称、完成时间、开始日期、结束日期和状态为必填项'
-    });
-  }
-
-  // 验证 inventory_manager_ids 是否为数组
-  if (inventory_manager_ids && !Array.isArray(inventory_manager_ids)) {
-    return res.status(400).json({ 
-      message: '库存管理员ID格式错误',
-      details: '库存管理员ID必须是一个数组'
-    });
-  }
-
-  const client = await pool.connect();
+  const { name, duration_days, start_date, end_date, status_id, inventory_manager_id, description } = req.body;
   try {
-    await client.query('BEGIN');
-
-    // 1. 创建项目
-    const projectResult = await client.query(
-      `INSERT INTO projects (
-        name, duration_days, start_date, end_date, 
-        status_id, manager_id, description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-      [name, duration_days, start_date, end_date, status_id, req.user.id, description || '']
+    const { rows } = await pool.query(
+      `INSERT INTO projects 
+        (name, duration_days, start_date, end_date, status_id, manager_id, inventory_manager_id, description) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       RETURNING id`,
+      [name, duration_days, start_date, end_date, status_id, req.user.id, inventory_manager_id, description]
     );
-    const projectId = projectResult.rows[0].id;
-
-    // 2. 关联库存管理员
-    if (inventory_manager_ids && inventory_manager_ids.length > 0) {
-      const values = inventory_manager_ids.map(
-        managerId => `(${projectId}, ${parseInt(managerId)})`
-      ).join(',');
-      
-      if (values) {
-        await client.query(
-          `INSERT INTO project_inventory_managers (project_id, inventory_manager_id) VALUES ${values}`
-        );
-      }
-    }
-
-    await client.query('COMMIT');
-    res.status(201).json({ message: '创建成功', id: projectId });
+    res.json({ data: rows[0] });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('创建项目失败:', error);
-    // 返回更详细的错误信息
-    res.status(500).json({ 
-      message: '创建项目失败',
-      details: error.message,
-      code: error.code
-    });
-  } finally {
-    client.release();
+    res.status(500).json({ message: '服务器错误' });
   }
 });
 
 // 更新项目
 router.put('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { 
-    name, 
-    duration_days, 
-    start_date, 
-    end_date, 
-    status_id, 
-    inventory_manager_ids,
-    description 
-  } = req.body;
-
-  const client = await pool.connect();
+  const { name, duration_days, start_date, end_date, status_id, inventory_manager_id, description } = req.body;
   try {
-    await client.query('BEGIN');
-
-    // 1. 更新项目信息
-    await client.query(
+    await pool.query(
       `UPDATE projects 
-       SET name = $1, duration_days = $2, start_date = $3, end_date = $4,
-           status_id = $5, description = $6
-       WHERE id = $7 AND manager_id = $8`,
-      [name, duration_days, start_date, end_date, status_id, description, id, req.user.id]
+       SET name = $1, 
+           duration_days = $2, 
+           start_date = $3, 
+           end_date = $4, 
+           status_id = $5, 
+           inventory_manager_id = $6, 
+           description = $7,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $8 AND manager_id = $9`,
+      [name, duration_days, start_date, end_date, status_id, inventory_manager_id, description, id, req.user.id]
     );
-
-    // 2. 更新库存管理员关联
-    await client.query(
-      'DELETE FROM project_inventory_managers WHERE project_id = $1',
-      [id]
-    );
-
-    if (inventory_manager_ids && inventory_manager_ids.length > 0) {
-      const values = inventory_manager_ids.map(
-        managerId => `(${id}, ${managerId})`
-      ).join(',');
-      await client.query(
-        `INSERT INTO project_inventory_managers (project_id, inventory_manager_id) VALUES ${values}`
-      );
-    }
-
-    await client.query('COMMIT');
     res.json({ message: '更新成功' });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('更新项目失败:', error);
     res.status(500).json({ message: '服务器错误' });
-  } finally {
-    client.release();
   }
 });
 

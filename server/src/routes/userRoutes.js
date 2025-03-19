@@ -340,46 +340,28 @@ router.put('/profile', authMiddleware, async (req, res) => {
 // 获取当前用户信息
 router.get('/current', authMiddleware, async (req, res) => {
   try {
-    console.log('获取当前用户信息 - 用户ID:', req.user?.id);
-    
-    if (!req.user?.id) {
-      console.error('用户ID未找到');
-      return res.status(400).json({ message: '用户ID未找到' });
-    }
-
     const { rows } = await pool.query(
       `SELECT 
-        id, 
-        username,
-        full_name,
-        department,
-        gender,
-        phone,
-        email,
-        avatar
-       FROM users
-       WHERE id = $1 AND is_active = true`,
+        u.id,
+        u.username,
+        u.full_name,
+        u.avatar,
+        u.email,
+        ur.role_id
+      FROM users u
+      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      WHERE u.id = $1`,
       [req.user.id]
     );
 
-    console.log('查询结果:', rows);
-
     if (rows.length === 0) {
-      console.log('用户不存在或未激活');
-      return res.status(404).json({ message: '用户不存在或未激活' });
+      return res.status(404).json({ message: '用户不存在' });
     }
 
     res.json({ data: rows[0] });
   } catch (error) {
-    console.error('获取当前用户信息失败:', {
-      error: error.message,
-      stack: error.stack,
-      user: req.user
-    });
-    res.status(500).json({ 
-      message: '服务器错误',
-      details: error.message 
-    });
+    console.error('获取用户信息失败:', error);
+    res.status(500).json({ message: '服务器错误' });
   }
 });
 

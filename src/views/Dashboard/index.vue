@@ -23,14 +23,25 @@
     <!-- 数据统计卡片 -->
     <div class="stats-container">
       <el-row :gutter="20">
-        <el-col :span="6" v-for="(stat, index) in statistics" :key="index">
+        <el-col :span="6" v-for="(stat, index) in displayStats" :key="index">
           <el-card class="stat-card" shadow="hover">
             <div class="stat-content">
               <div class="stat-icon" :style="{ backgroundColor: stat.bgColor }">
                 <el-icon><component :is="stat.icon" /></el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-value">
+                  {{ stat.value }}
+                  <template v-if="stat.urgentTasks && stat.urgentTasks.length > 0">
+                    <el-tooltip
+                      effect="dark"
+                      placement="top"
+                      :content="getUrgentTasksTooltip(stat.urgentTasks)"
+                    >
+                      <el-icon class="urgent-tasks-icon"><InfoFilled /></el-icon>
+                    </el-tooltip>
+                  </template>
+                </div>
                 <div class="stat-label">{{ stat.label }}</div>
               </div>
             </div>
@@ -168,6 +179,35 @@ const statistics = ref([
   }
 ])
 
+// 生产专员的统计数据
+const productionStats = ref([
+  {
+    label: '总任务数',
+    value: '0',
+    icon: Document,
+    bgColor: '#409EFF'
+  },
+  {
+    label: '进行中任务',
+    value: '0',
+    icon: Histogram,
+    bgColor: '#67C23A'
+  },
+  {
+    label: '异常任务',
+    value: '0',
+    icon: User,
+    bgColor: '#E6A23C'
+  },
+  {
+    label: '即将截止',
+    value: '0',
+    icon: Check,
+    bgColor: '#F56C6C',
+    urgentTasks: [] // 添加即将截止任务的详细信息
+  }
+])
+
 // 公告列表
 const notices = ref([])
 
@@ -179,17 +219,60 @@ const avatarUrl = computed(() => {
   return `http://localhost:3001${userInfo.value.avatar}`
 })
 
+// 获取用户角色
+const userStore = useUserStore()
+const userRole = computed(() => {
+  console.log('计算用户角色，store中的userInfo:', userStore.userInfo)
+  console.log('用户角色数组:', JSON.stringify(userStore.userInfo?.roles))
+  // 从 roles 数组中获取第一个角色
+  const roles = Array.isArray(userStore.userInfo?.roles) ? userStore.userInfo.roles : []
+  const roleName = roles[0]
+  console.log('计算得到的角色名称:', roleName)
+  return roleName || null
+})
+
+// 根据用户角色显示不同的统计数据
+const displayStats = computed(() => {
+  console.log('计算显示统计数据，当前用户角色:', userRole.value)
+  console.log('是否显示生产专员统计:', userRole.value === 'production_specialist')
+  return userRole.value === 'production_specialist' ? productionStats.value : statistics.value
+})
+
 const router = useRouter()
+
+// 获取生产专员的统计数据
+const fetchProductionStats = async () => {
+  try {
+    console.log('开始获取生产专员统计数据...')
+    const response = await api.get('/api/tasks/stats')
+    console.log('获取到的统计数据:', response.data)
+    const stats = response.data.data
+    
+    productionStats.value[0].value = stats.total_tasks
+    productionStats.value[1].value = stats.in_progress_tasks
+    productionStats.value[2].value = stats.abnormal_tasks
+    productionStats.value[3].value = stats.urgent_tasks
+    productionStats.value[3].urgentTasks = stats.urgent_tasks_details || []
+    
+    console.log('更新后的生产专员统计数据:', productionStats.value)
+  } catch (error) {
+    console.error('获取生产专员统计数据失败:', error)
+    if (error.response) {
+      console.error('错误响应:', error.response.data)
+      console.error('状态码:', error.response.status)
+    }
+  }
+}
 
 // 获取用户信息
 const fetchUserInfo = async () => {
   try {
     console.log('开始获取用户信息...')
-    const userStore = useUserStore()
     
     // 如果 store 中已有用户信息，直接使用
     if (userStore.userInfo && Object.keys(userStore.userInfo).length > 0) {
       console.log('从 store 获取用户信息:', userStore.userInfo)
+      console.log('用户角色数组:', JSON.stringify(userStore.userInfo.roles))
       userInfo.value = { ...userStore.userInfo }
     } else {
       // 否则从 API 获取
@@ -197,9 +280,18 @@ const fetchUserInfo = async () => {
       console.log('从 API 获取的用户信息:', response.data)
       
       if (response.data.data) {
-        userInfo.value = response.data.data
-        // 更新 store
-        userStore.setUserInfo(response.data.data)
+        const userData = response.data.data
+        console.log('API返回的用户数据:', userData)
+        console.log('用户角色:', JSON.stringify(userData.roles))
+        
+        userInfo.value = {
+          full_name: userData.full_name,
+          avatar: userData.avatar,
+          greeting: '你好'
+        }
+        // 更新 store，保持原有的数据结构
+        userStore.setUserInfo(userData)
+        console.log('更新后的store:', userStore.userInfo)
       }
     }
 
@@ -214,6 +306,16 @@ const fetchUserInfo = async () => {
     userInfo.value.greeting = greeting
     
     console.log('更新后的用户信息:', userInfo.value)
+    const roles = Array.isArray(userStore.userInfo?.roles) ? userStore.userInfo.roles : []
+    console.log('当前store中的用户角色:', roles[0])
+
+    // 如果是生产专员，获取相应的统计数据
+    if (roles[0] === 'production_specialist') {
+      console.log('检测到生产专员，开始获取统计数据')
+      await fetchProductionStats()
+    } else {
+      console.log('不是生产专员，使用默认统计数据')
+    }
   } catch (error) {
     console.error('获取用户信息失败:', error)
     if (error.response) {
@@ -222,19 +324,12 @@ const fetchUserInfo = async () => {
     }
   }
 }
-const handleDetail = (row) => {
-  currentNotice.value = row;
-  showDetail.value = true; // 切换到详情页
-  isEditing.value = false; // 默认进入非编辑模式
-  editForm.value = { ...row };
-};
 
 // 获取公告列表
 const fetchNotices = async () => {
   try {
     console.log('开始获取公告列表...')
     const response = await api.get('/api/notices')
-    console.log('获取到的公告列表:', response.data)
     notices.value = response.data.data
   } catch (error) {
     console.error('获取公告列表失败:', error)
@@ -269,6 +364,11 @@ const fetchEmployeeCount = async () => {
 // 处理公告点击
 const handleNoticeClick = (noticeId) => {
   router.push(`/notice/${noticeId}`)
+}
+
+// 获取即将截止任务的提示信息
+const getUrgentTasksTooltip = (tasks) => {
+  return tasks.map(task => task.project_name).join('\n')
 }
 
 // 在组件挂载时获取数据
@@ -362,6 +462,15 @@ onMounted(() => {
   font-weight: bold;
   color: #303133;
   line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .urgent-tasks-icon {
+    font-size: 16px;
+    color: #F56C6C;
+    cursor: pointer;
+  }
 }
 
 .stat-label {

@@ -35,7 +35,7 @@ router.get('/', authMiddleware, async (req, res) => {
        ORDER BY created_at DESC 
        LIMIT 5`
     );
-    console.log('获取到的公告列表:', rows);
+    
     res.json({ data: rows });
   } catch (error) {
     console.error('获取公告列表失败:', error);
