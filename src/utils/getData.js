@@ -89,6 +89,39 @@ export const getDynamicRoutes = () => {
             });
         }
 
+        // 生产专员和项目经理可以看到生产日报
+        if (roleIds.includes(2) || roleIds.includes(3)) {
+            routes.push({
+                path: '/production-report',
+                name: 'productionReport',
+                meta: {
+                    breadcrumbName: '生产日报',
+                    icon: 'Document'
+                },
+                children: roleIds.includes(3) ? [
+                    // 生产专员可以看到填写日报
+                    {
+                        path: 'write',
+                        name: 'productionReportIndex',
+                        meta: {
+                            breadcrumbName: '填写日报',
+                            icon: 'Edit'
+                        }
+                    }
+                ] : [
+                    // 项目经理可以看到日报列表
+                    {
+                        path: 'list',
+                        name: 'productionReportList',
+                        meta: {
+                            breadcrumbName: '日报列表',
+                            icon: 'List'
+                        }
+                    }
+                ]
+            });
+        }
+
         // 所有用户都可以看到个人中心
         routes.push({
             path: '/profile',

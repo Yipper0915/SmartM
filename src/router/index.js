@@ -121,7 +121,38 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/Login/index.vue'),
-    }
+    },
+    {
+      path: '/production-report',
+      component: Layout,
+      meta: { 
+        breadcrumbName: '生产日报',
+        icon: 'Document',
+        staticRouter: true
+      },
+      children: [
+        {
+          path: 'write',
+          name: 'ProductionReportIndex',
+          component: () => import('@/views/ProductionReport/index.vue'),
+          meta: { 
+            breadcrumbName: '填写日报',
+            icon: 'Document',
+            staticRouter: true
+          }
+        },
+        {
+          path: 'list',
+          name: 'ProductionReportList',
+          component: () => import('@/views/ProductionReport/list.vue'),
+          meta: {
+            breadcrumbName: '日报列表',
+            icon: 'List',
+            staticRouter: true
+          }
+        }
+      ]
+    },
   ],
 })
 

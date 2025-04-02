@@ -275,4 +275,38 @@ router.delete('/steps/:stepId', authMiddleware, async (req, res) => {
   }
 });
 
+// 获取项目经理管理的项目列表
+router.get('/manager', authMiddleware, async (req, res) => {
+  try {
+    // 验证用户角色
+    const roleQuery = `
+      SELECT role_id 
+      FROM user_roles 
+      WHERE user_id = $1
+    `
+    const roleResult = await pool.query(roleQuery, [req.user.id])
+    const userRoleId = roleResult.rows[0]?.role_id
+    
+    // 只有项目经理可以访问此接口
+    if (userRoleId !== 2) {
+      return res.status(403).json({ message: '只有项目经理可以查看项目列表' })
+    }
+
+    const query = `
+      SELECT 
+        p.id,
+        p.name
+      FROM projects p
+      WHERE p.manager_id = $1
+      ORDER BY p.created_at DESC
+    `
+    
+    const { rows } = await pool.query(query, [req.user.id])
+    res.json({ data: rows })
+  } catch (error) {
+    console.error('获取项目经理项目列表失败:', error)
+    return res.status(500).json({ message: '服务器错误' })
+  }
+})
+
 module.exports = router; 

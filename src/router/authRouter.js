@@ -11,7 +11,9 @@ const componentMap = {
   notice: () => import('@/views/System/NoticeManage.vue'),
   profileIndex: () => import('@/views/Profile/index.vue'),
   projectList: () => import('@/views/Project/List.vue'),
-  projectSchedule: () => import('@/views/Project/Schedule.vue')
+  projectSchedule: () => import('@/views/Project/Schedule.vue'),
+  productionReportIndex: () => import('@/views/ProductionReport/index.vue'),
+  productionReportList: () => import('@/views/ProductionReport/list.vue')
 }
 
 const iconList = {

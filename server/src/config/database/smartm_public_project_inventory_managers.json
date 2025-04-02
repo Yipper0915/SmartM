@@ -1,0 +1,27 @@
+[
+  {
+    "project_id": 1,
+    "inventory_manager_id": 4,
+    "created_at": "2025-03-16 06:38:54.602467 +00:00"
+  },
+  {
+    "project_id": 3,
+    "inventory_manager_id": 4,
+    "created_at": "2025-03-16 06:40:11.831034 +00:00"
+  },
+  {
+    "project_id": 4,
+    "inventory_manager_id": 6,
+    "created_at": "2025-03-16 06:43:46.294375 +00:00"
+  },
+  {
+    "project_id": 5,
+    "inventory_manager_id": 6,
+    "created_at": "2025-03-17 03:31:06.591285 +00:00"
+  },
+  {
+    "project_id": 2,
+    "inventory_manager_id": 6,
+    "created_at": "2025-03-17 08:33:54.066225 +00:00"
+  }
+]

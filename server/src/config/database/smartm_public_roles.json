@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "name": "system_admin",
+    "description": "系统管理员",
+    "permissions": "{\"all\": true}",
+    "created_at": "2025-03-15 06:06:49.757284 +00:00",
+    "updated_at": "2025-03-15 06:06:49.757284 +00:00"
+  },
+  {
+    "id": 2,
+    "name": "project_manager",
+    "description": "项目经理",
+    "permissions": "{\"report_view\": true, \"project_management\": true}",
+    "created_at": "2025-03-15 06:06:49.757284 +00:00",
+    "updated_at": "2025-03-15 06:06:49.757284 +00:00"
+  },
+  {
+    "id": 3,
+    "name": "production_specialist",
+    "description": "生产专员",
+    "permissions": "{\"inventory_view\": true, \"production_management\": true}",
+    "created_at": "2025-03-15 06:06:49.757284 +00:00",
+    "updated_at": "2025-03-15 06:06:49.757284 +00:00"
+  },
+  {
+    "id": 4,
+    "name": "inventory_manager",
+    "description": "库存管理员",
+    "permissions": "{\"inventory_view\": true, \"inventory_management\": true}",
+    "created_at": "2025-03-15 06:06:49.757284 +00:00",
+    "updated_at": "2025-03-15 06:06:49.757284 +00:00"
+  }
+]

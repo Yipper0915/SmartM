@@ -1,0 +1,67 @@
+[
+  {
+    "id": 2,
+    "name": "富士山代工-动力机器",
+    "duration_days": 40,
+    "start_date": "2025-03-15",
+    "end_date": "2025-04-25",
+    "status_id": 1,
+    "manager_id": 2,
+    "description": "",
+    "created_at": "2025-03-16 06:38:44.906383 +00:00",
+    "updated_at": "2025-03-17 09:09:18.591911 +00:00",
+    "inventory_manager_id": 4
+  },
+  {
+    "id": 4,
+    "name": "小米代工-5000部手机",
+    "duration_days": 30,
+    "start_date": "2025-02-28",
+    "end_date": "2025-03-31",
+    "status_id": 4,
+    "manager_id": 2,
+    "description": null,
+    "created_at": "2025-03-16 06:40:30.108469 +00:00",
+    "updated_at": "2025-03-17 09:09:18.591911 +00:00",
+    "inventory_manager_id": 4
+  },
+  {
+    "id": 3,
+    "name": "华为代工-500个摄像头",
+    "duration_days": 30,
+    "start_date": "2025-03-01",
+    "end_date": "2025-04-01",
+    "status_id": 3,
+    "manager_id": 2,
+    "description": "",
+    "created_at": "2025-03-16 06:40:11.831034 +00:00",
+    "updated_at": "2025-03-17 12:42:33.808652 +00:00",
+    "inventory_manager_id": 4
+  },
+  {
+    "id": 5,
+    "name": "三星代工-100手机屏幕",
+    "duration_days": 60,
+    "start_date": "2025-03-14",
+    "end_date": "2025-04-14",
+    "status_id": 2,
+    "manager_id": 2,
+    "description": "此项目归生产一部，这个项目很重要，务必重视。",
+    "created_at": "2025-03-17 03:31:06.591285 +00:00",
+    "updated_at": "2025-03-17 12:42:42.014679 +00:00",
+    "inventory_manager_id": 6
+  },
+  {
+    "id": 1,
+    "name": "金山代工-100台相机",
+    "duration_days": 30,
+    "start_date": "2025-03-14",
+    "end_date": "2025-04-14",
+    "status_id": 2,
+    "manager_id": 2,
+    "description": "",
+    "created_at": "2025-03-16 14:03:58.519000 +00:00",
+    "updated_at": "2025-03-17 12:42:57.545836 +00:00",
+    "inventory_manager_id": 4
+  }
+]
