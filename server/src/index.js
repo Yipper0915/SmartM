@@ -7,6 +7,9 @@ const noticeRoutes = require('./routes/noticeRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const productionReportRoutes = require('./routes/productionReportRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const projectActivityRoutes = require('./routes/projectActivityRoutes');
 const path = require('path');
 require('dotenv').config();
 
@@ -35,6 +38,9 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/production-reports', productionReportRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/project-activities', projectActivityRoutes);
 // 基础路由
 app.get('/', (req, res) => {
   res.json({ message: 'Vue3 PC Template API' });

@@ -122,6 +122,36 @@ export const getDynamicRoutes = () => {
             });
         }
 
+        // 库存管理员可以看到库存管理路由
+        if (roleIds.includes(4)) {
+            routes.push({
+                path: '/inventory',
+                name: 'inventory',
+                meta: {
+                    breadcrumbName: '库存管理',
+                    icon: 'Box'
+                },
+                children: [
+                    {
+                        path: 'materials',
+                        name: 'InventoryMaterials',
+                        meta: {
+                            breadcrumbName: '材料管理',
+                            icon: 'Goods'
+                        }
+                    },
+                    {
+                        path: 'records',
+                        name: 'InventoryRecords',
+                        meta: {
+                            breadcrumbName: '出入库记录',
+                            icon: 'Document'
+                        }
+                    }
+                ]
+            });
+        }
+
         // 所有用户都可以看到个人中心
         routes.push({
             path: '/profile',

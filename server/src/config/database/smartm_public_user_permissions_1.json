@@ -1,0 +1,44 @@
+[
+  {
+    "user_id": 1,
+    "username": "admin",
+    "full_name": "黄管理",
+    "roles": "[\"system_admin\"]",
+    "role_permissions": "{ \"system_admin\" : {\"all\": true} }"
+  },
+  {
+    "user_id": 2,
+    "username": "manager",
+    "full_name": "李PM",
+    "roles": "[\"project_manager\"]",
+    "role_permissions": "{ \"project_manager\" : {\"report_view\": true, \"project_management\": true} }"
+  },
+  {
+    "user_id": 3,
+    "username": "production",
+    "full_name": "刘生产",
+    "roles": "[\"production_specialist\"]",
+    "role_permissions": "{ \"production_specialist\" : {\"inventory_view\": true, \"production_management\": true} }"
+  },
+  {
+    "user_id": 4,
+    "username": "inventory",
+    "full_name": "陆库管",
+    "roles": "[\"inventory_manager\"]",
+    "role_permissions": "{ \"inventory_manager\" : {\"inventory_view\": true, \"inventory_management\": true} }"
+  },
+  {
+    "user_id": 5,
+    "username": "productionDu",
+    "full_name": "杜生产",
+    "roles": "[\"production_specialist\"]",
+    "role_permissions": "{ \"production_specialist\" : {\"inventory_view\": true, \"production_management\": true} }"
+  },
+  {
+    "user_id": 6,
+    "username": "Liang",
+    "full_name": "梁库管",
+    "roles": "[\"inventory_manager\"]",
+    "role_permissions": "{ \"inventory_manager\" : {\"inventory_view\": true, \"inventory_management\": true} }"
+  }
+]

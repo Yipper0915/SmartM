@@ -41,6 +41,15 @@
                       <el-icon class="urgent-tasks-icon"><InfoFilled /></el-icon>
                     </el-tooltip>
                   </template>
+                  <template v-if="stat.lowStockMaterials && stat.lowStockMaterials.length > 0">
+                    <el-tooltip
+                      effect="dark"
+                      placement="top"
+                      :content="getLowStockMaterialsTooltip(stat.lowStockMaterials)"
+                    >
+                      <el-icon class="urgent-tasks-icon"><InfoFilled /></el-icon>
+                    </el-tooltip>
+                  </template>
                 </div>
                 <div class="stat-label">{{ stat.label }}</div>
               </div>
@@ -96,9 +105,18 @@
                 <el-button text>查看更多</el-button>
               </div>
             </template>
-            <div class="project-list">
-              <!-- 这里放项目动态列表 -->
-              <div class="empty-placeholder">暂无项目动态</div>
+            <div class="project-list" v-loading="projectActivitiesLoading">
+              <template v-if="projectActivities.length">
+                <div v-for="activity in projectActivities" :key="activity.id" class="activity-item">
+                  <div class="activity-title">
+                    <el-tag size="small" type="info">{{ activity.project_name }}</el-tag>
+                    <span class="activity-user">{{ activity.user_name }}</span>
+                  </div>
+                  <div class="activity-content">{{ activity.description }}</div>
+                  <div class="activity-time">{{ new Date(activity.created_at).toLocaleString() }}</div>
+                </div>
+              </template>
+              <div v-else class="empty-placeholder">暂无项目动态</div>
             </div>
           </el-card>
         </el-col>
@@ -155,13 +173,13 @@ const weather = ref('晴 26°C')
 const statistics = ref([
   {
     label: '订单数',
-    value: '0',
+    value: '8',
     icon: Document,
     bgColor: '#409EFF'
   },
   {
     label: '项目进度',
-    value: '0%',
+    value: '50%',
     icon: Histogram,
     bgColor: '#67C23A'
   },
@@ -173,7 +191,7 @@ const statistics = ref([
   },
   {
     label: '项目完成率',
-    value: '0/0',
+    value: '2/8',
     icon: Check,
     bgColor: '#F56C6C'
   }
@@ -208,8 +226,41 @@ const productionStats = ref([
   }
 ])
 
+// 库存管理员的统计数据
+const inventoryStats = ref([
+  {
+    label: '关联项目数',
+    value: '0',
+    icon: Document,
+    bgColor: '#409EFF'
+  },
+  {
+    label: '出库记录',
+    value: '0',
+    icon: Histogram,
+    bgColor: '#67C23A'
+  },
+  {
+    label: '入库记录',
+    value: '0',
+    icon: User,
+    bgColor: '#E6A23C'
+  },
+  {
+    label: '材料紧缺',
+    value: '0',
+    icon: InfoFilled,
+    bgColor: '#F56C6C',
+    lowStockMaterials: [] // 添加库存紧缺材料的详细信息
+  }
+])
+
 // 公告列表
 const notices = ref([])
+
+// 项目动态列表
+const projectActivities = ref([])
+const projectActivitiesLoading = ref(false)
 
 // 添加头像URL的计算属性
 const avatarUrl = computed(() => {
@@ -235,7 +286,13 @@ const userRole = computed(() => {
 const displayStats = computed(() => {
   console.log('计算显示统计数据，当前用户角色:', userRole.value)
   console.log('是否显示生产专员统计:', userRole.value === 'production_specialist')
-  return userRole.value === 'production_specialist' ? productionStats.value : statistics.value
+  if (userRole.value === 'production_specialist') {
+    return productionStats.value
+  } else if (userRole.value === 'inventory_manager') {
+    return inventoryStats.value
+  } else {
+    return statistics.value
+  }
 })
 
 const router = useRouter()
@@ -257,6 +314,30 @@ const fetchProductionStats = async () => {
     console.log('更新后的生产专员统计数据:', productionStats.value)
   } catch (error) {
     console.error('获取生产专员统计数据失败:', error)
+    if (error.response) {
+      console.error('错误响应:', error.response.data)
+      console.error('状态码:', error.response.status)
+    }
+  }
+}
+
+// 获取库存管理员统计数据
+const fetchInventoryStats = async () => {
+  try {
+    console.log('开始获取库存管理员统计数据...')
+    const response = await api.get('/api/inventory/stats')
+    console.log('获取到的库存统计数据:', response.data)
+    const stats = response.data.data
+    
+    inventoryStats.value[0].value = stats.project_count
+    inventoryStats.value[1].value = stats.stock_out_count
+    inventoryStats.value[2].value = stats.stock_in_count
+    inventoryStats.value[3].value = stats.low_stock_count
+    inventoryStats.value[3].lowStockMaterials = stats.low_stock_materials || []
+    
+    console.log('更新后的库存管理员统计数据:', inventoryStats.value)
+  } catch (error) {
+    console.error('获取库存管理员统计数据失败:', error)
     if (error.response) {
       console.error('错误响应:', error.response.data)
       console.error('状态码:', error.response.status)
@@ -309,12 +390,15 @@ const fetchUserInfo = async () => {
     const roles = Array.isArray(userStore.userInfo?.roles) ? userStore.userInfo.roles : []
     console.log('当前store中的用户角色:', roles[0])
 
-    // 如果是生产专员，获取相应的统计数据
+    // 根据用户角色获取对应的统计数据
     if (roles[0] === 'production_specialist') {
       console.log('检测到生产专员，开始获取统计数据')
       await fetchProductionStats()
+    } else if (roles[0] === 'inventory_manager') {
+      console.log('检测到库存管理员，开始获取统计数据')
+      await fetchInventoryStats()
     } else {
-      console.log('不是生产专员，使用默认统计数据')
+      console.log('使用默认统计数据')
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
@@ -340,6 +424,25 @@ const fetchNotices = async () => {
         console.error('认证失败，可能需要重新登录')
       }
     }
+  }
+}
+
+// 获取项目动态
+const fetchProjectActivities = async () => {
+  try {
+    projectActivitiesLoading.value = true
+    console.log('开始获取项目动态...')
+    const response = await api.get('/api/project-activities/latest')
+    projectActivities.value = response.data.data
+    console.log('获取到的项目动态:', projectActivities.value)
+  } catch (error) {
+    console.error('获取项目动态失败:', error)
+    if (error.response) {
+      console.error('错误响应数据:', error.response.data)
+      console.error('错误状态码:', error.response.status)
+    }
+  } finally {
+    projectActivitiesLoading.value = false
   }
 }
 
@@ -371,12 +474,18 @@ const getUrgentTasksTooltip = (tasks) => {
   return tasks.map(task => task.project_name).join('\n')
 }
 
+// 获取库存紧缺材料的提示信息
+const getLowStockMaterialsTooltip = (materials) => {
+  return materials.map(mat => `${mat.material_code} - ${mat.name}: ${mat.quantity}${mat.unit}`).join('\n')
+}
+
 // 在组件挂载时获取数据
 onMounted(() => {
   console.log('Dashboard组件已挂载，开始获取数据...')
   fetchUserInfo()
   fetchNotices()
   fetchEmployeeCount()  // 添加获取在职员工数量
+  fetchProjectActivities()  // 添加获取项目动态
 })
 </script>
 
@@ -575,5 +684,59 @@ onMounted(() => {
 
 .project-list {
   height: calc(100% - 24px);
+  padding: 0 16px;
+  overflow-y: auto; /* 开启垂直滚动 */
+  height: 300px; /* 固定高度 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #e4e7ed;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: #f5f7fa;
+  }
+}
+
+.activity-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #ebeef5;
+  transition: all 0.3s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: #f5f7fa;
+    padding: 16px 10px;
+    margin: 0 -10px;
+  }
+}
+
+.activity-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.activity-user {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.activity-content {
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.activity-time {
+  color: #909399;
+  font-size: 12px;
 }
 </style>

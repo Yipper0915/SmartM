@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "project_name": "金山代工-100台相机",
+    "duration_days": 30,
+    "start_date": "2025-03-14",
+    "end_date": "2025-04-14",
+    "status_name": "in_progress",
+    "status_description": "进行中",
+    "inventory_managers": ["陆库管"]
+  },
+  {
+    "id": 2,
+    "project_name": "富士山代工-动力机器",
+    "duration_days": 40,
+    "start_date": "2025-03-15",
+    "end_date": "2025-04-25",
+    "status_name": "not_started",
+    "status_description": "未开始",
+    "inventory_managers": ["梁库管"]
+  },
+  {
+    "id": 3,
+    "project_name": "华为代工-500个摄像头",
+    "duration_days": 30,
+    "start_date": "2025-03-01",
+    "end_date": "2025-04-01",
+    "status_name": "completed",
+    "status_description": "已完成",
+    "inventory_managers": ["陆库管"]
+  },
+  {
+    "id": 4,
+    "project_name": "小米代工-5000部手机",
+    "duration_days": 30,
+    "start_date": "2025-02-28",
+    "end_date": "2025-03-31",
+    "status_name": "abnormal",
+    "status_description": "异常",
+    "inventory_managers": ["梁库管"]
+  },
+  {
+    "id": 5,
+    "project_name": "三星代工-100手机屏幕",
+    "duration_days": 60,
+    "start_date": "2025-03-14",
+    "end_date": "2025-04-14",
+    "status_name": "in_progress",
+    "status_description": "进行中",
+    "inventory_managers": ["梁库管"]
+  }
+]

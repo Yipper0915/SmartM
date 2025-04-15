@@ -153,6 +153,40 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/inventory',
+      component: Layout,
+      meta: { 
+        breadcrumbName: '库存管理',
+        icon: 'Box',
+        staticRouter: true,
+        roleIds: [4] // 仅供库存管理员访问 
+      },
+      children: [
+        {
+          path: 'materials',
+          name: 'InventoryMaterials',
+          component: () => import('@/views/Inventory/index.vue'),
+          meta: { 
+            breadcrumbName: '材料管理',
+            icon: 'Goods',
+            staticRouter: true,
+            roleIds: [4]
+          }
+        },
+        {
+          path: 'records',
+          name: 'InventoryRecords',
+          component: () => import('@/views/Inventory/records.vue'),
+          meta: {
+            breadcrumbName: '出入库记录',
+            icon: 'Document',
+            staticRouter: true,
+            roleIds: [4]
+          }
+        }
+      ]
+    },
   ],
 })
 

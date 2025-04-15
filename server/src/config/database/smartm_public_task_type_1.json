@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "normal",
+    "description": "普通任务",
+    "color": "#67C23A",
+    "created_at": "2025-03-16 07:45:05.549067"
+  },
+  {
+    "id": 2,
+    "name": "material",
+    "description": "绿通任务",
+    "color": "#E6A23C",
+    "created_at": "2025-03-16 07:45:05.549067"
+  }
+]

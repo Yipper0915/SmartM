@@ -336,4 +336,132 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 });
 
+// 更新任务状态
+router.put('/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, comments } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ message: '状态不能为空' });
+    }
+    
+    // 验证状态值是否有效
+    const validStatuses = ['pending', 'in_progress', 'completed', 'delayed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: '无效的状态值' });
+    }
+    
+    // 开始事务
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // 获取任务信息
+      const taskQuery = `
+        SELECT t.*, p.name as project_name, p.id as project_id
+        FROM tasks t
+        JOIN projects p ON t.project_id = p.id
+        WHERE t.id = $1
+      `;
+      const taskResult = await client.query(taskQuery, [id]);
+      
+      if (!taskResult.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: '任务不存在' });
+      }
+      
+      const task = taskResult.rows[0];
+      const oldStatus = task.status;
+      
+      // 检查用户是否有权限更新任务
+      const userRolesQuery = `
+        SELECT role_id 
+        FROM user_roles 
+        WHERE user_id = $1
+      `;
+      const userRolesResult = await client.query(userRolesQuery, [req.user.id]);
+      const userRoles = userRolesResult.rows.map(row => row.role_id);
+      
+      // 检查用户是否是项目经理、生产专员或任务分配的用户
+      const isProjectManager = userRoles.includes(2);
+      const isProductionSpecialist = userRoles.includes(3);
+      const isAssignedUser = task.assigned_to === req.user.id;
+      
+      if (!isProjectManager && !isProductionSpecialist && !isAssignedUser) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ message: '无权更新此任务' });
+      }
+      
+      // 更新任务状态
+      const updateQuery = `
+        UPDATE tasks
+        SET status = $1, updated_at = NOW()
+        WHERE id = $2
+        RETURNING *
+      `;
+      await client.query(updateQuery, [status, id]);
+      
+      // 添加状态变更记录
+      const historyQuery = `
+        INSERT INTO task_history (
+          task_id, status, comments, created_by
+        ) VALUES ($1, $2, $3, $4)
+      `;
+      await client.query(historyQuery, [id, status, comments || null, req.user.id]);
+      
+      // 获取用户姓名
+      const userQuery = 'SELECT full_name FROM users WHERE id = $1';
+      const userResult = await client.query(userQuery, [req.user.id]);
+      const userName = userResult.rows[0]?.full_name || '用户';
+      
+      // 获取状态的中文名称
+      const statusMap = {
+        'pending': '待处理',
+        'in_progress': '进行中',
+        'completed': '已完成',
+        'delayed': '延期',
+        'cancelled': '已取消'
+      };
+      
+      // 创建项目动态记录
+      const activityDescription = `${userName}将任务"${task.title}"状态从"${statusMap[oldStatus] || oldStatus}"更改为"${statusMap[status] || status}"`;
+      
+      const activityQuery = `
+        INSERT INTO project_activities (
+          project_id, user_id, activity_type, description, related_id
+        ) VALUES ($1, $2, $3, $4, $5)
+      `;
+      
+      await client.query(activityQuery, [
+        task.project_id,
+        req.user.id,
+        'task_status_changed',
+        activityDescription,
+        id
+      ]);
+      
+      await client.query('COMMIT');
+      
+      res.json({
+        message: '任务状态已更新',
+        data: {
+          task_id: id,
+          status: status,
+          updated_by: req.user.id,
+          updated_at: new Date()
+        }
+      });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('更新任务状态失败:', error);
+    res.status(500).json({ message: '服务器错误' });
+  }
+});
+
 module.exports = router;

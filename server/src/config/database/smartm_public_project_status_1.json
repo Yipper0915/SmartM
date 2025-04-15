@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "not_started",
+    "description": "未开始",
+    "created_at": "2025-03-16 04:56:40.902694 +00:00"
+  },
+  {
+    "id": 2,
+    "name": "in_progress",
+    "description": "进行中",
+    "created_at": "2025-03-16 04:56:40.902694 +00:00"
+  },
+  {
+    "id": 3,
+    "name": "completed",
+    "description": "已完成",
+    "created_at": "2025-03-16 04:56:40.902694 +00:00"
+  },
+  {
+    "id": 4,
+    "name": "abnormal",
+    "description": "异常",
+    "created_at": "2025-03-16 04:56:40.902694 +00:00"
+  }
+]

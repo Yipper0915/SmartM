@@ -13,7 +13,9 @@ const componentMap = {
   projectList: () => import('@/views/Project/List.vue'),
   projectSchedule: () => import('@/views/Project/Schedule.vue'),
   productionReportIndex: () => import('@/views/ProductionReport/index.vue'),
-  productionReportList: () => import('@/views/ProductionReport/list.vue')
+  productionReportList: () => import('@/views/ProductionReport/list.vue'),
+  InventoryMaterials: () => import('@/views/Inventory/index.vue'),
+  InventoryRecords: () => import('@/views/Inventory/records.vue')
 }
 
 const iconList = {
